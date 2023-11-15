@@ -1,0 +1,116 @@
+---
+title: "WCS Info Packet"
+author: ""
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+params:
+  area_num: 5
+output:
+  pdf_document:
+    # toc: true
+    # toc_depth: 3
+# linkcolor: blue
+# header-includes:
+#   - \usepackage{caption}
+#   - \captionsetup[figure]{labelformat=empty}
+# editor_options: 
+#   chunk_output_type: console
+# knit: (function(inputFile, encoding){ 
+#     out_dir <- '/';
+#     rmarkdown::render(inputFile, encoding = encoding, output_file=file.path(dirname(inputFile), out_dir, 'ECOL592_RDAandCCA_GWoolsey.pdf')) 
+#   })
+---
+
+```{r, include=F, warning=F, message=F}
+# knit options
+knitr::opts_chunk$set(
+  echo = TRUE
+  , warning = FALSE
+  , message = FALSE
+  , results='hide'
+  , fig.width = 10
+  , fig.height = 8
+)
+# bread-and-butter
+library(tidyverse)
+library(lubridate)
+library(viridis)
+library(scales)
+library(latex2exp)
+# visualization
+library(kableExtra)
+library(cowplot)
+library(cowplot) # align plots in grid
+library(patchwork) # ! better align plots in grid
+library(RColorBrewer)
+library(ggpubr) #creating and customizing ggplot2-based publication ready plots
+library(ggtext) # color text in ggplot
+```
+
+```{r, include=FALSE, echo=FALSE}
+# load data and functions
+source("_02_infopkt_pltfns.R")
+```
+
+```{r, include=FALSE}
+# !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
+  plt_basemap <<- landscape_basemap_fn(row_n = params$area_num)
+# load raster data
+# !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
+  rast_list_temp <<- raster_data_read_fn(row_n = params$area_num)
+  # rast_list_temp <- raster_data_read_fn(row_n = params$area_num)
+# PLOTS
+landscape_basemap_temp <- landscape_basemap_fn(row_n = params$area_num)
+spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = params$area_num)
+# rast_area_fn(row_n = params$area_num, layer_name = "is_treatable")
+landcover_map_temp <- landcover_map_fn(row_n = params$area_num, rast_agg_fact = 9)
+protected_map_temp <- protected_map_fn(row_n = params$area_num, rast_agg_fact = 9)
+```
+
+
+```{r, include=FALSE, eval=FALSE}
+# Testing
+# !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
+  plt_basemap <<- landscape_basemap_fn(row_n = 5)
+# load raster data
+# !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
+  rast_list_temp <<- raster_data_read_fn(row_n = 5)
+  # rast_list_temp <- raster_data_read_fn(row_n = 5)
+# PLOTS
+landscape_basemap_temp <- landscape_basemap_fn(row_n = 5)
+spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = 5)
+# rast_area_fn(row_n = 5, layer_name = "is_treatable")
+landcover_map_temp <- landcover_map_fn(row_n = 5, rast_agg_fact = 9)
+protected_map_temp <- protected_map_fn(row_n = 5, rast_agg_fact = 9)
+slopes_map_temp <- slopes_map_fn(row_n = 5, rast_agg_fact = 9)
+roads_map_temp <- roads_map_fn(row_n = 5, rast_agg_fact = 9)
+riparian_map_temp <- riparian_map_fn(row_n = 5, rast_agg_fact = 9)
+administrative_map_temp <- administrative_map_fn(row_n = 5, rast_agg_fact = 9)
+treatable_map_temp <- treatable_map_fn(row_n = 5, rast_agg_fact = 9)
+reduction_table_temp <- reduction_table_fn(row_n = 5)
+title_plot_temp <- title_plot_fn(row_n = 5)
+scenario_cnstrnt_map_temp <- scenario_cnstrnt_map_fn(row_n = 5)
+largest_patch_map_temp <- largest_patch_map_fn(row_n = 5)
+plt_patch_prop_temp <- plt_patch_prop_fn(row_n = 5)
+plt_fshed_cnstrnt_lvl_temp <- plt_fshed_cnstrnt_lvl_fn(row_n = 5)
+#####################################################################
+landscape_basemap_temp
+spatial_frmwrk_map_temp
+landcover_map_temp
+protected_map_temp
+slopes_map_temp
+roads_map_temp
+riparian_map_temp
+administrative_map_temp
+treatable_map_temp
+reduction_table_temp
+title_plot_temp
+scenario_cnstrnt_map_temp
+largest_patch_map_temp
+plt_patch_prop_temp
+plt_fshed_cnstrnt_lvl_temp
+# CLEAN
+remove(list = ls()[grep("_temp",ls())])
+gc()
+
+```
+
