@@ -1160,8 +1160,8 @@ title_plot_fn <- function(row_n = 1) {
     theme_void() +
     theme(
       panel.background = element_blank()
-      , plot.title = element_text(face = "bold", size = 28)
-      , plot.subtitle = element_text(size = 18)
+      , plot.title = element_text(face = "bold", size = 24)
+      , plot.subtitle = element_text(size = 14)
     )
   # return
   return(plt)

@@ -58,7 +58,21 @@ render_report <- function(area_num) {
   # assuming the output format of input.Rmd is PDF
   rmarkdown::render(
     "index.Rmd"
-    , params = list(area_num = area_num)
+    , params = list(
+      area_num = area_num
+      , area_name = paste0(
+          wf_landscapes %>% 
+            sf::st_drop_geometry() %>% 
+            dplyr::filter(area_name == area_nm_list[area_num]) %>% 
+            dplyr::pull(name)
+          , " ("
+          , wf_landscapes %>% 
+            sf::st_drop_geometry() %>% 
+            dplyr::filter(area_name == area_nm_list[area_num]) %>% 
+            dplyr::pull(state)
+          , ")"
+        )
+    )
     , output_file = paste0(
           hey_dir
           , "/"

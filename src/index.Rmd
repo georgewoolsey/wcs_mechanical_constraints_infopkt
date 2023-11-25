@@ -1,11 +1,16 @@
 ---
-title: "WCS Info Packet for `r area_nm_list[params$area_nm]`"
+# title: "`r params$area_name`"
+title: ""
 author: ""
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+date: ""
+# date: "`r format(Sys.time(), '%d %B, %Y')`"
 params:
   area_num: 5
-output: pdf_document
-# linkcolor: blue
+  area_name: "Temp Name"
+geometry: margin=2cm
+output:
+  pdf_document
+linkcolor: blue
 # header-includes:
 #   - \usepackage{caption}
 #   - \captionsetup[figure]{labelformat=empty}
@@ -41,21 +46,29 @@ gc()
 # !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
   rast_list_temp <<- raster_data_read_fn(row_n = params$area_num)
   # rast_list_temp <- raster_data_read_fn(row_n = params$area_num)
+# theme for small maps
+  theme_maps_temp <- theme(
+    plot.title = element_blank()
+    , plot.margin = margin(0,0,0,0,"cm")
+  )
+#################
 # PLOTS
+#################
+title_plot_temp <- title_plot_fn(row_n = params$area_num)
 spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = params$area_num)
 # rast_area_fn(row_n = params$area_num, layer_name = "is_treatable")
 landcover_map_temp <- landcover_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp) +
-  theme(plot.title = element_blank())
+  theme_maps_temp
 protected_map_temp <- protected_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp) +
-  theme(plot.title = element_blank())
+  theme_maps_temp
 slopes_map_temp <- slopes_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp) +
-  theme(plot.title = element_blank())
+  theme_maps_temp
 roads_map_temp <- roads_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp) +
-  theme(plot.title = element_blank())
+  theme_maps_temp
 riparian_map_temp <- riparian_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp) +
-  theme(plot.title = element_blank())
+  theme_maps_temp
 administrative_map_temp <- administrative_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp) +
-  theme(plot.title = element_blank())
+  theme_maps_temp
 # names and labels
 area_name_nost <- wf_landscapes %>% 
   sf::st_drop_geometry() %>% 
@@ -65,15 +78,29 @@ area_st <- wf_landscapes %>%
   sf::st_drop_geometry() %>% 
   dplyr::filter(area_name == area_nm_list[params$area_num]) %>% 
   dplyr::pull(state)
+area_acres <- wf_landscapes %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::filter(area_name == area_nm_list[params$area_num]) %>% 
+  dplyr::pull(acres) %>% 
+  scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
+area_ha <- wf_landscapes %>% 
+  sf::st_drop_geometry() %>% 
+  dplyr::filter(area_name == area_nm_list[params$area_num]) %>% 
+  dplyr::pull(hectares) %>% 
+  scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
 ```
 
-Nested spatial framework of the `r area_name_nost` (`r area_st`; black outline) delineating firesheds (gray dashed outline) approximately 100,000 hectares (250,000 acres) in size which are the broad scale unit of prioritization and nested fireshed project areas (light blue outline) approximately 10,000 hectares (25,000 acres) in size which are used for planning and conducting fuel management projects. Fireshed project areas are shaded by risk to communities of the parent fireshed with the highest risk firesheds as determined by the Strategy shaded red (multiple ownerships) and orange (USFS ownership only). The full process for delineating fireshed boundaries across the continental US is described in detail in [Ager et al. (2021)](https://scholar.google.com/scholar?cluster=7852635540589253195&hl=en&as_sdt=0,6).
+```{r print-title, fig.height=1, fig.align='center'}
+title_plot_temp
+```
+
+The `r area_name_nost` priority landscape (black outline) located in `r area_st` covers `r area_acres` acres (`r area_ha` ha). This analysis utilized the nested spatial framework delineating firesheds (gray dashed outline) approximately 100,000 hectares (250,000 acres) in size which are the broad scale unit of prioritization and nested fireshed project areas (light blue outline) approximately 10,000 hectares (25,000 acres) in size which are used for planning and conducting fuel management projects. Fireshed project areas are shaded by risk to communities of the parent fireshed with the highest risk firesheds as determined by the Strategy shaded red (multiple ownerships) and orange (USFS ownership only). The full process for delineating fireshed boundaries across the continental US is described in detail in [Ager et al. (2021)](https://scholar.google.com/scholar?cluster=7852635540589253195&hl=en&as_sdt=0,6).
 
 ```{r print-spatial-frmwrk}
 spatial_frmwrk_map_temp
 ```
 
-Workflow used to quantify the amount of land available for mechanical forest health and risk reduction fuel treatments by considering layered operational constraints. The analysis identifies (A) all forest and shrubland areas, (B) removes protected and inventoried roadless areas, (C) classifies land as mechanically operable based on terrain slope, (D) buffers existing roads according to equipment haul distance, (E) removes areas within riparian buffers, (F) removes areas within administrative boundaries to determine what land is mechanically available or constrained and by what factor.
+Layered operational constraints were considered in order to quantify the amount of land available for mechanical forest health and risk reduction fuel treatments. The analysis identifies (A) all forest and shrubland areas, (B) removes protected and inventoried roadless areas (IRA), (C) classifies land as mechanically operable based on terrain slope, (D) buffers existing roads according to equipment haul distance, (E) removes areas within riparian buffers, (F) removes areas within administrative boundaries to determine what land is mechanically available or constrained and by what factor.
 
 ```{r print-layered-constraints}
 (landcover_map_temp + protected_map_temp + slopes_map_temp) /
