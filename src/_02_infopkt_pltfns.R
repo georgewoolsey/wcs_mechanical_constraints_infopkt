@@ -16,6 +16,7 @@ library(patchwork) # ! better align plots in grid
 library(RColorBrewer)
 library(ggpubr) #creating and customizing ggplot2-based publication ready plots
 library(ggtext) # color text in ggplot
+library(USAboundaries)
 # spatial analysis
 library(sf)
 library(lwgeom)
@@ -36,6 +37,186 @@ gc()
 # functions
 ############################################################
 ############################################################
+
+############################################################
+############################################################
+# assumptions and methods
+############################################################
+############################################################
+## Analysis Scenarios
+  # table theme
+    ttheme_temp <- ggpubr::ttheme(
+      base_style = "light"
+      , colnames.style = colnames_style(
+        size = 11
+        , face = "bold"
+        , fill = "white"
+        , linewidth = 0
+        , linecolor = "transparent"
+      )
+      , tbody.style = tbody_style(
+        size = 10
+        , fill = c("white", "gray96")
+        , linewidth = 0
+        , linecolor = "transparent"
+      )
+    )
+    # Text plot
+      text_temp <- paste(
+            "Hierarchy of constraints used to determine whether mechanical"
+            , "equipment was allowed and operationally feasible for this"
+            , "analysis, where spatial analysis was overlaid from L1"
+            , "through L5 to attribute the cause of constraint."
+        , sep = " ")
+      text_plt_temp <- ggpubr::ggparagraph(
+        text = text_temp
+        , face = "italic"
+        , size = 12
+      )
+    # Arrange the plots on the same page
+    
+  
+  # mechanical mgmt allowed if:
+  n_sc_temp <- 3
+  plt_scenario_table_temp <-
+    data.frame(
+      scenario = 1:n_sc_temp
+      , cover = rep("Forest or Shrubland",n_sc_temp)
+      , protected = rep("Not Protected",n_sc_temp)
+      , slope = c("<40%","<60%","<60%")
+      , road = c("<1,000ft","<2,000ft","<2,000ft")
+      , riparian = c(">100ft",">100ft",">50ft")
+      , admin = c("No Designation","No Designation","Any Designation")
+    ) %>% 
+      tidyr::pivot_longer(
+        cols = -c(scenario)
+      ) %>% 
+      tidyr::pivot_wider(
+        names_from = scenario
+        , values_from = value
+        , names_prefix = "scenario_"
+      ) %>% 
+      dplyr::mutate(
+        name = factor(
+          name
+          , levels = c(
+            "cover"
+            , "protected"
+            , "slope"
+            , "road"
+            , "riparian"
+            , "admin"
+          )
+          , labels = c(
+            "NLCD Cover Type"
+            , "Protected or\nIRA Status"
+            , "Slope"
+            , "Distance to\nNearest Road"
+            , "Riparian\nBuffer"
+            , "Administrative\nDesignation"
+          )
+          , ordered = T
+        )
+      ) %>% 
+      dplyr::arrange(name) %>% 
+      dplyr::mutate(
+        lvl = paste0("L",dplyr::row_number()-1,":")
+      ) %>% 
+      dplyr::relocate(lvl) %>% 
+      dplyr::rename(
+            " " = 1
+            , "Constraint\ntype" = 2
+            , "Scenario 1\nmost constrained" = 3
+            , "Scenario 2\n " = 4
+            , "Scenario 3\nleast constrained" = 5
+          ) %>% 
+      ggpubr::ggtexttable(rows = NULL, theme = ttheme_temp)
+      
+  # plot table
+    plt_scenario_table <- plt_scenario_table_temp 
+    #   ggpubr::ggarrange(
+    #     plt_scenario_table_temp
+    #     , text_plt_temp
+    #   
+    #   , ncol = 1
+    #   , nrow = 2
+    #   , heights = c(1, 0.25)
+    # ) + 
+    # theme(plot.margin = margin(0,0,0,0,"cm"))
+    # plt_scenario_table
+## Fireshed Project Area Classifications
+  # table theme
+  ttheme_temp <- ggpubr::ttheme(
+    base_style = "light"
+    , colnames.style = colnames_style(
+      size = 9
+      , face = "bold"
+      , fill = "white"
+      , linewidth = 0
+      , linecolor = "transparent"
+    )
+    , tbody.style = tbody_style(
+      size = 9
+      , fill = c("white", "gray96")
+      , linewidth = 0
+      , linecolor = "transparent"
+    )
+  )
+  # Text plot
+    text_temp <- paste(
+        "Fireshed project areas of approximately 10,000 hectares (25,000 acres)"
+        , "in size represent the geographic unit at which vegetation and fuel"
+        , "management projects are planned. Fireshed project areas"
+        , "were divided into three classes of"
+        , "mechanical constraint: high, medium, and low."
+      , sep = " ")
+    text_plt_temp <- ggpubr::ggparagraph(
+      text = text_temp
+      , face = "italic"
+      , size = 9
+    )
+  # Arrange the plots on the same page
+  
+  plt_scenario_table_temp <-
+    data.frame(
+      lvl = c("High constraint", "Medium constraint", "Low constraint")
+      , constrained = c("81–100%", "60–80%", "0–59%")
+      , available = c("0–19%", "20–40%","41–100%")
+      
+    ) %>% 
+      dplyr::rename(
+            "Level of\nconstraint" = 1
+            , "Mechanically\nconstrained area" = 2
+            , "Mechanically\navailable area" = 3
+          ) %>% 
+      ggpubr::ggtexttable(rows = NULL, theme = ttheme_temp)
+      
+  # plot table
+    # plt_cnstrnt_class_table <- ggpubr::ggarrange(
+    #     plt_scenario_table_temp + 
+    #        theme(plot.margin = margin(0,0,0,0,"cm"))
+    #     , NULL
+    #     , text_plt_temp
+    #   , ncol = 1
+    #   , nrow = 3
+    #   , heights = c(1,0.01, 0.35)
+    # )
+  
+    plt_cnstrnt_class_table <- cowplot::plot_grid(
+        plt_scenario_table_temp + 
+           theme(plot.margin = margin(0,0,0.2,0,"cm"))
+        , NULL
+        , text_plt_temp + 
+           theme(plot.margin = margin(0.2,0,0,0,"cm"))
+      , ncol = 1
+      , nrow = 3
+      , rel_heights = c(1,0.05, 0.7)
+      , align = "v"
+      , axis = "lr"
+    ) + 
+    theme(plot.margin = margin(0,0,0,0,"cm"))
+
+
 
 ############################################################
 ############################################################
@@ -111,19 +292,19 @@ landscape_basemap_fn <- function(row_n=1) {
   )
   # should buffer extend?
   buffer_box <- dplyr::case_when(
-    area_nm_list[row_n] %in% c("WA: Colville Northeast Washington Vision") ~ 50000
+    area_nm_list[row_n] %in% c("WA: Colville Northeast Washington Vision") ~ 58000
     , area_nm_list[row_n] %in% c(
       "CA: Southern California Fireshed Risk Reduction Strategy"
       , "ID: Nez Perce-Clearwater-Lower Salmon"
       , "MT: Kootenai Complex"
     ) ~ 40000
     , area_nm_list[row_n] %in% c(
-      "AZ: San Carlos Apache Tribal Forest Protection"
-      , "NV: Sierra and Elko Fronts"
+      "NV: Sierra and Elko Fronts"
       , "UT: Pine Valley"
     ) ~ 21000
     , area_nm_list[row_n] %in% c(
-      "CA: Plumas Community Protection"
+      "AZ: San Carlos Apache Tribal Forest Protection"
+      , "CA: Plumas Community Protection"
       , "CA: North Yuba"
       , "CA: Trinity Forest Health and Fire-Resilient Rural Communities"
       , "OR: Mount Hood Forest Health and Fire-Resilient Communities"
@@ -217,7 +398,7 @@ landscape_basemap_fn <- function(row_n=1) {
 ###### set plot basemap in global function
 # uncomment for testing
 plt_basemap <- NULL
-# plt_basemap <- landscape_basemap_fn(row_n = 4)
+# landscape_basemap_fn(row_n = 21)
 ############################################################
 ############################################################
 ### Plot of Nested Fireshed Spatial Framework
@@ -1072,14 +1253,14 @@ reduction_table_fn <- function(row_n = 1) {
   ttheme_temp <- ggpubr::ttheme(
     base_style = "light"
     , colnames.style = colnames_style(
-      size = 9
+      size = 10
       , face = "bold"
       , fill = "white"
       , linewidth = 0
       , linecolor = "transparent"
     )
     , tbody.style = tbody_style(
-      size = 9
+      size = 10
       , fill = c("white", "gray96")
       , linewidth = 0
       , linecolor = "transparent"
@@ -1103,36 +1284,98 @@ reduction_table_fn <- function(row_n = 1) {
   # Arrange the plots on the same page
   
   # plot table
-  plt <- ggpubr::ggarrange(
-    
-      ggpubr::ggtexttable(table_temp, rows = NULL, theme = ttheme_temp)
-      , text_plt
-    
-    , ncol = 1
-    , nrow = 2
-    , heights = c(1, 0.25)
+  plt <- ggpubr::ggtexttable(table_temp, rows = NULL, theme = ttheme_temp) + 
+  # ggpubr::ggarrange(
+  #   
+  #     ggpubr::ggtexttable(table_temp, rows = NULL, theme = ttheme_temp)
+  #     , text_plt
+  #   
+  #   , ncol = 1
+  #   , nrow = 2
+  #   , heights = c(1, 0.25)
+  # ) +
+  theme(
+    plot.margin = margin(0,0,0,0,"cm")
   )
-    
-    # %>% # ggpubr::tab_add_footnote(
-    #     text = paste0(
-    #       "Combined forest and shrubland area within the landscape boundaries"
-    #       , " and the percent reduction of different types of constraints"
-    #       , "        "
-    #       , "\non mechanical treatment based on the three scenarios of "
-    #       , " operational constraints considered in this analysis."
-    #       , "                                         "
-    #     )
-    #     , size = 9
-    #     , just = "right"
-    #     , padding = unit(0.7, "line")
-    #     , hjust = 1.08
-    #   )
   
   
   
   return(plt)
 }
 # reduction_table_fn(1)
+############################################################
+############################################################
+# reduction table kable
+############################################################
+############################################################
+reduction_kable_fn <- function(row_n = 1) {
+  constrained_by_scnro_ls %>% 
+        dplyr::filter(area_name == area_nm_list[row_n]) %>%
+        dplyr::mutate(
+          dplyr::across(
+            tidyselect::ends_with("_ha")
+            , ~ scales::comma(.x, suffix = "k", scale = 1e-3, accuracy = 1)
+          )
+          , dplyr::across(
+            tidyselect::starts_with("pct_")
+            , ~ scales::percent(.x, accuracy = .1)
+          )
+        ) %>% 
+        dplyr::select(
+          # area_name
+          scenario_lab
+          , covertype_area_ha
+          , pct_covertype_area
+          , pct_rdctn1_protected
+          , pct_rdctn2_slope
+          , pct_rdctn3_roads
+          , pct_rdctn4_riparian
+          , pct_rdctn5_administrative
+          , rmn5_administrative_area_ha
+          , pct_rmn5_administrative
+        ) %>% 
+        dplyr::arrange(desc(scenario_lab)) %>% 
+        dplyr::rename(
+          "Scenario\n " = scenario_lab
+          , "Forest & Shrub\n(ha)" = covertype_area_ha
+          , "Forest & Shrub\n(%)" = pct_covertype_area
+          , "Protected\n& IRA " = pct_rdctn1_protected
+          , "Slope\nSteepness" = pct_rdctn2_slope
+          , "Road\nDistance" = pct_rdctn3_roads
+          , "Riparian\nBuffer" = pct_rdctn4_riparian
+          , "Administrative\n " = pct_rdctn5_administrative
+          , "Mechanically\nAvailable (ha)" = rmn5_administrative_area_ha
+          , "Mechanically\nAvailable (%)" = pct_rmn5_administrative
+          # # remove \n for kable to pdf?
+          # "Scenario" = scenario_lab
+          # , "Forest & Shrub (ha)" = covertype_area_ha
+          # , "Forest & Shrub (%)" = pct_covertype_area
+          # , "Protected & IRA " = pct_rdctn1_protected
+          # , "Slope Steepness" = pct_rdctn2_slope
+          # , "Road Distance" = pct_rdctn3_roads
+          # , "Riparian Buffer" = pct_rdctn4_riparian
+          # , "Administrative" = pct_rdctn5_administrative
+          # , "Mechanically Available (ha)" = rmn5_administrative_area_ha
+          # , "Mechanically Available (%)" = pct_rmn5_administrative
+        ) %>% 
+    # knitr::kable(
+    kableExtra::kbl(
+      # format = "latex"
+      booktabs = TRUE
+      # , longtable = TRUE
+      # , linesep = ""
+      # , align = "l"
+      # col.names = linebreak(column_names, align = "l"),
+      , escape = FALSE
+      , digits = 1
+      , caption = ""
+      ) %>%
+    kableExtra::kable_styling(
+      latex_options = c("scale_down", "striped", "hold_position")
+    )
+  
+}
+# reduction_kable_fn(5)
 ############################################################
 ############################################################
 ### Title plot
@@ -1511,7 +1754,162 @@ plt_fshed_cnstrnt_lvl_fn <- function(row_n = 1) {
   return(plt_fshed_cnstrnt_lvl_temp)
 }
 # plt_fshed_cnstrnt_lvl_fn(7)
-
+############################################################
+############################################################
+### inset map with all landscapes
+############################################################
+############################################################
+### define function to highlight one landscape
+plt_ls_us_state_fn <- function(row_n = 1, use_simple = F) {
+  states_temp <- USAboundaries::us_states() %>% 
+    sf::st_transform(sf::st_crs(wf_landscapes)) %>% 
+    sf::st_filter(wf_landscapes %>% dplyr::filter(area_name==area_nm_list[row_n]))
+  cities_temp <- USAboundaries::us_cities(
+      states = c(
+            # usfs region 1-6 states
+            "MT","WY","CO","NM","AZ","UT","ID","WA","OR","CA","NV"
+            # , "KS","NE","SD","ND"
+          )
+      ) %>% 
+      sf::st_transform(sf::st_crs(wf_landscapes)) %>% 
+      dplyr::filter(
+        toupper(city) %in% c(
+          "DENVER"
+          , "TUSCON"
+          , "SALT LAKE CITY"
+          , "LAS VEGAS"
+          , "SAN DIEGO"
+          , "LOS ANGELES"
+          , "FRESNO"
+          , "SAN FRANCISCO"
+          , "SACRAMENTO"
+          , "PORTLAND"
+          , "SEATTLE"
+          , "ALBUQUERQUE"
+          , "RENO"
+          , "BOISE"
+          , "HELENA"
+          , "BILLINGS"
+        )
+        | (toupper(city) == "PHOENIX" & state_abbr == "AZ")
+      ) %>% 
+      dplyr::filter(
+        state_abbr %in% unique(states_temp$stusps)
+      )
+  plt_simple_temp <- 
+    ggplot() + 
+      geom_sf(
+        data = states_temp
+        , fill = "white"
+        , color = "gray66"
+      ) +
+      geom_sf_text(
+        data = states_temp
+        , mapping = aes(label = stusps)
+        , color = "gray66"
+        , size = 3
+      ) +
+      coord_sf(expand = F) +
+      theme_void()
+  return(
+    if(use_simple){
+      # plot without cities and names
+         plt_simple_temp +
+          geom_sf(
+            data = wf_landscapes %>% 
+              dplyr::filter(area_name==area_nm_list[row_n])
+            , fill="navy"
+            , color="blue4"
+            , alpha = 0.8
+            , lwd=0.3
+          )
+    }else{
+      # plot with cities and names
+        plt_simple_temp +
+          geom_sf(
+            data = cities_temp
+            , shape = 1
+            , size = 1
+            , color = "gray44"
+          ) +
+          geom_sf_text(
+            data = cities_temp
+            , mapping = aes(label = city)
+            , color = "gray44"
+            , size = 1.8
+            # , hjust = -0.15
+            , hjust = -0.05
+            , vjust = 0.5
+          ) +
+          geom_sf(
+            data = wf_landscapes %>% 
+              dplyr::filter(area_name==area_nm_list[row_n])
+            , fill="navy"
+            , color="blue4"
+            , alpha = 0.8
+            , lwd=0.3
+          )
+    }
+  )
+}
+# plt_ls_us_state_fn(row_n = 14, use_simple = F)
+############################################################
+############################################################
+### inset + spatial framework
+############################################################
+############################################################
+spatial_frmwrk_inset_fn <- function(row_n=1) {
+  ##!!!!!!!!!!! must define plt_basemap first
+  # plt_basemap <<- landscape_basemap_fn(row_n = row_n)
+  spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = row_n)
+  plt_ls_us_state_temp <- plt_ls_us_state_fn(row_n = row_n, use_simple = F) + 
+    theme(
+      plot.background = element_rect(fill = "white", color = "black")
+      , plot.margin = margin(0,0,0,0,"cm")
+    )
+  # set inset location, size
+  if(row_n %in% c(1)){ # upper right for short, wide inset
+    left_temp=0.80
+    bottom_temp=0.85
+    right_temp=1.02
+    top_temp=0.99
+  } else if(row_n %in% c(9,20)){ # upper left for tall, thin main + short, wide inset
+    left_temp=-0.40
+    bottom_temp=0.88
+    right_temp=0.03
+    top_temp=0.99
+  } else if(row_n %in% c(11,15)){ # upper left for tall, thin main + wide, wide inset
+    left_temp=-0.30
+    bottom_temp=0.88
+    right_temp=0.10
+    top_temp=0.99
+  } else if(row_n %in% c(6)){ # upper right for tall, thin inset
+    left_temp=0.87
+    bottom_temp=0.78
+    right_temp=1.01
+    top_temp=0.99
+  } else{ # upper left
+    left_temp=-0.01
+    bottom_temp=0.78
+    right_temp=0.13
+    top_temp=0.99
+  }
+  spatial_frmwrk_map_temp + 
+    patchwork::inset_element(
+      plt_ls_us_state_temp
+      # location of the plot edges
+      , left=left_temp, bottom=bottom_temp, right=right_temp, top=top_temp
+      , align_to = "panel"
+      , clip = T
+    )
+  # export for testing
+  # ggplot2::ggsave(paste0("C:/Users/georg/Downloads/hey_", row_n, ".jpeg"),width = 10, height = 8, units = "in")
+}
+# uncomment export in function to test writing
+# 1:length(area_nm_list) %>%
+#   purrr::map(spatial_frmwrk_inset_fn)
+############################################################
+############################################################
 remove(list = ls()[grep("_temp",ls())])
 gc()
 ############################################################

@@ -40,7 +40,7 @@ library(ggmap)
 # ggmap::get_stadiamap(c(left = 32.2, bottom = 34.5, right = 34.8, top = 35.8), zoom = 10, maptype = "stamen_terrain") %>% ggmap()
 remove(list = ls()[grep("_temp",ls())])
 gc()
-############################################################
+########################################################
 ############################################################
 # Parameterized reports
 # see: https://bookdown.org/yihui/rmarkdown-cookbook/parameterized-reports.html
@@ -84,5 +84,8 @@ render_report <- function(area_num) {
   )
 }
 # 1:length(area_nm_list) %>% 
-c(4,5) %>% 
+# c(4,11,12) %>% 
+c(4,12) %>% 
   purrr::map(render_report)
+
+
