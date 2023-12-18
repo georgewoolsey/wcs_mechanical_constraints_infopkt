@@ -66,7 +66,7 @@ ggtext_size_temp = ifelse(image_asp_temp==1,7,10)
 # set aggregate factor for raster data
   agg_fact_temp <- 20
 # !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
-  plt_basemap <<- landscape_basemap_fn(row_n = params$area_num)
+  plt_basemap <<- landscape_basemap_fn(row_n = params$area_num, my_base_size = base_size_temp)
 # load raster data
 # !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
   rast_list_temp <<- raster_data_read_fn(row_n = params$area_num)
@@ -84,14 +84,9 @@ slopes_map_temp <- slopes_map_fn(row_n = params$area_num, rast_agg_fact = agg_fa
 roads_map_temp <- roads_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
 riparian_map_temp <- riparian_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
 administrative_map_temp <- administrative_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
-# area available and constraint reduction table
-treatable_map_temp <- treatable_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
+# tables
 reduction_table_temp <- reduction_table_fn(row_n = params$area_num)
 reduction_kable_temp <- reduction_kable_fn(row_n = params$area_num)
-# fireshed project area plots
-# largest_patch_map_temp <- largest_patch_map_fn(row_n = params$area_num)
-# plt_patch_prop_temp <- plt_patch_prop_fn(row_n = params$area_num)
-plt_fshed_cnstrnt_lvl_temp <- plt_fshed_cnstrnt_lvl_fn(row_n = params$area_num)
 
 # names and labels
 area_name_nost <- wf_landscapes %>% 
@@ -161,85 +156,5 @@ reduction_table_temp +
     plot.title = element_blank()
     , plot.margin = margin(0,0,0,0,"cm")
   )
-```
-
-```{r treatable-map}
-# ```{r treatable-map, fig.height=6.5}
-# {r treatable-map, fig.height=height_for_image_temp, fig.width=width_for_image}
-treatable_map_temp +
-  theme(
-    plot.title = element_blank()
-    , plot.margin = margin(0,0,0,0,"cm")
-  )
-```
-
-The proportion of combined forest and shrubland area available for mechanical treatment was calculated by considering layered operational constraints on mechanical treatment based on three scenarios using current standards. At each level of constraint, the reduction in area and percentage was calculated based on the area remaining after considering the cumulative impact of prior constraints.
-
-```{r fshed-cnstrnt-dist}
-# ```{r fshed-cnstrnt-dist, fig.height=3, fig.width=11}
-plt_cnstrnt_class_table +
-plt_fshed_cnstrnt_lvl_temp +
-  theme(
-    plot.title = element_blank()
-    , plot.margin = margin(0.0,0.0,0.0,0.3, "cm")
-  ) +
-  patchwork::plot_layout(nrow = 1, widths = c(1,2)) 
-```
-
-
-```{r, eval=FALSE, include=FALSE}
-  (plt_scenario_table +
-     patchwork::plot_spacer()
-  ) /
-  reduction_table_fn(1) +
-  patchwork::plot_layout(ncol = 1)
-# & theme(plot.margin = margin(0,0,0,0,"cm"))
-ggplot2::ggsave(paste0("C:/Users/georg/Downloads/hey_xxx.jpeg"),width = 8.8, height = 3.5, units = "in")
-
-
-# Testing
-# !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
-  plt_basemap <<- landscape_basemap_fn(row_n = 5)
-# load raster data
-# !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
-  rast_list_temp <<- raster_data_read_fn(row_n = 5)
-  # rast_list_temp <- raster_data_read_fn(row_n = 5)
-# PLOTS
-landscape_basemap_temp <- landscape_basemap_fn(row_n = 5)
-spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = 5)
-# rast_area_fn(row_n = 5, layer_name = "is_treatable")
-landcover_map_temp <- landcover_map_fn(row_n = 5, rast_agg_fact = 9)
-protected_map_temp <- protected_map_fn(row_n = 5, rast_agg_fact = 9)
-slopes_map_temp <- slopes_map_fn(row_n = 5, rast_agg_fact = 9)
-roads_map_temp <- roads_map_fn(row_n = 5, rast_agg_fact = 9)
-riparian_map_temp <- riparian_map_fn(row_n = 5, rast_agg_fact = 9)
-administrative_map_temp <- administrative_map_fn(row_n = 5, rast_agg_fact = 9)
-treatable_map_temp <- treatable_map_fn(row_n = 5, rast_agg_fact = 9)
-reduction_table_temp <- reduction_table_fn(row_n = 5)
-title_plot_temp <- title_plot_fn(row_n = 5)
-scenario_cnstrnt_map_temp <- scenario_cnstrnt_map_fn(row_n = 5)
-largest_patch_map_temp <- largest_patch_map_fn(row_n = 5)
-plt_patch_prop_temp <- plt_patch_prop_fn(row_n = 5)
-plt_fshed_cnstrnt_lvl_temp <- plt_fshed_cnstrnt_lvl_fn(row_n = 5)
-#####################################################################
-landscape_basemap_temp
-spatial_frmwrk_map_temp
-landcover_map_temp
-protected_map_temp
-slopes_map_temp
-roads_map_temp
-riparian_map_temp
-administrative_map_temp
-treatable_map_temp
-reduction_table_temp
-title_plot_temp
-scenario_cnstrnt_map_temp
-largest_patch_map_temp
-plt_patch_prop_temp
-plt_fshed_cnstrnt_lvl_temp
-# CLEAN
-remove(list = ls()[grep("_temp",ls())])
-gc()
-
 ```
 

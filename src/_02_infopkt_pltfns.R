@@ -254,7 +254,7 @@ ggmap_bbox_fn <- function(map, my_crs=3857) {
     map
 }
 # function to plot basemap
-landscape_basemap_fn <- function(row_n=1) {
+landscape_basemap_fn <- function(row_n=1, my_base_size = 11) {
   # buffer for smaller areas
   if_smaller_ha_temp <- wf_landscapes %>% 
     dplyr::pull(hectares) %>% 
@@ -376,21 +376,20 @@ landscape_basemap_fn <- function(row_n=1) {
     labs(
       title = "" #area_nm_list[row_n]
     ) +
-    theme_light() +
+    theme_light(base_size = my_base_size) +
     theme(
       legend.position =  "top"
       , legend.direction = "horizontal"
-      , legend.title = element_text(size = 9, face = "bold")
-      , legend.text = element_text(size = 9)
-      , legend.margin = margin(c(0,0,-10,0))
-      , plot.title = element_text(size = 10, face = "bold") #, hjust = 0.5
-      , strip.text = element_text(size = 10, color = "black", face = "bold")
+      , legend.title = element_text(size = 8, face = "bold")
+      , legend.margin = margin(c(0,0,-5,0))
+      , plot.title = element_text(face = "bold") #, hjust = 0.5
+      , strip.text = element_text(color = "black", face = "bold")
       , axis.title = element_blank()
       , axis.text = element_blank()
       , axis.ticks = element_blank()
       , panel.grid = element_blank()
       , plot.margin = margin(0, 0, 0, 0, "cm")
-      , plot.caption = element_text(size = 9, color = "black", hjust = 0, vjust = 3)
+      , plot.caption = element_text(color = "black", hjust = 0, vjust = 3)
     )
   # return
   return(plt)
@@ -475,7 +474,7 @@ spatial_frmwrk_map_fn <- function(row_n = 1) {
       , title = "Spatial framework and risk"
       , caption = paste0(
         "High-Risk Fireshed Project Areas:\n"
-        , sum_dta_temp$total_area_acres[1], " acres"
+        , sum_dta_temp$total_area_acres[1], " ac"
         , " ("
         , sum_dta_temp$total_area_ha[1], " ha"
         , ")"
@@ -483,13 +482,13 @@ spatial_frmwrk_map_fn <- function(row_n = 1) {
     ) +
     coord_sf(expand = F) +
     guides(
-      color = guide_legend(order = 1, override.aes = list(orientation = "vertical", size = 8, linewidth = 5, fill = NA))
-      , fill = guide_legend(order = 2, override.aes = list(orientation = "vertical", size = 8,linewidth = 0, alpha = 1))
+      color = guide_legend(order = 1, ncol = 2, override.aes = list(orientation = "vertical", size = 6, linewidth = 5, fill = NA))
+      , fill = guide_legend(order = 2, ncol = 2, override.aes = list(orientation = "vertical", size = 6,linewidth = 0, alpha = 1))
     )
   # return
   return(plt)
 }
-
+# spatial_frmwrk_map_fn(1)
 ############################################################
 ############################################################
 ### Read Raster Data Function
@@ -688,7 +687,7 @@ landcover_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
       , subtitle = "<span><span style='color:forestgreen;'><b>Forest & Shrub</b></span>"
       , caption = paste0(
           "Forest & Shrub: "
-          , area_temp$covertype_area_acres[1], " acres"
+          , area_temp$covertype_area_acres[1], " ac"
           , " ("
           , area_temp$covertype_area_ha[1], " ha"
           , ")"
@@ -748,7 +747,7 @@ protected_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
           , area_df %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df %>% 
             dplyr::filter(value == 1) %>% 
@@ -829,7 +828,7 @@ slopes_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
           , area_df1 %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df1 %>% 
             dplyr::filter(value == 1) %>% 
@@ -841,7 +840,7 @@ slopes_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
           , area_df2 %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df2 %>% 
             dplyr::filter(value == 1) %>% 
@@ -922,7 +921,7 @@ roads_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
           , area_df1 %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df1 %>% 
             dplyr::filter(value == 1) %>% 
@@ -933,7 +932,7 @@ roads_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
           , area_df2 %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df2 %>% 
             dplyr::filter(value == 1) %>% 
@@ -1008,22 +1007,22 @@ riparian_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
       title = "Riparian Buffer"
       , subtitle = "<b>Riparian Buffer </b><span><span style='color:#a01a9c;'><b>100ft</b></span> | <span style='color:#6e00a8;'><b>50ft</b></span></span>"
       , caption = paste0(
-          "Riparian Buffer 100ft: "
+          "Riparian Bfr 100ft: "
           , area_df1 %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df1 %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_ha_lab)
           , " ha"
           , ")"
-          , "\nRiparian Buffer 50ft: "
+          , "\nRiparian Bfr 50ft: "
           , area_df3 %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df3 %>% 
             dplyr::filter(value == 1) %>% 
@@ -1095,7 +1094,7 @@ administrative_map_fn <- function(row_n = 1, rast_agg_fact = 2) {
           , area_df %>% 
             dplyr::filter(value == 1) %>% 
             dplyr::pull(area_acres_lab)
-          , " acres"
+          , " ac"
           , " ("
           , area_df %>% 
             dplyr::filter(value == 1) %>% 
