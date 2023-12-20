@@ -84,6 +84,7 @@ render_report <- function(area_num) {
     , envir = parent.frame()
   )
 }
-1:length(area_nm_list) %>%
-# c(4,11,12,15,21) %>%
+# 1:length(area_nm_list) %>%
+# c(4,8,11,12,15,21) %>%
+c(9) %>%
   purrr::map(render_report)

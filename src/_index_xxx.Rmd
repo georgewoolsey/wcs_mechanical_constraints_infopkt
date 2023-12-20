@@ -9,8 +9,16 @@ params:
   area_name: "Temp Name"
 geometry: margin=1.5cm
 output:
-  pdf_document
+  pdf_document: default
+  # bookdown::pdf_document2
 linkcolor: blue
+header-includes: |
+    \usepackage{fancyhdr}
+    \pagestyle{fancy}
+    \fancyhead{}
+    \renewcommand{\headrulewidth}{0pt}
+    \fancyfoot[CO,CE]{`r params$area_name`}
+    \fancyfoot[LE,RO]{\thepage}
 # header-includes:
 #   - \usepackage{caption}
 #   - \captionsetup[figure]{labelformat=empty}
@@ -53,13 +61,14 @@ w_temp <- bb_temp[3] - bb_temp[1]
 h_temp <- bb_temp[4] - bb_temp[2]
 # fig.asp sets the height-to-width ratio
 image_asp_temp <- min(h_temp/w_temp,1)
-# fix for layered constraints text sizing
+# change the sizing of the basemap using theme_light(base_size = base_size_temp)
 base_size_temp = ifelse(image_asp_temp==1,8,9)
+# change the subtitle labels created with ggtext for layered constraints plot
 ggtext_size_temp = ifelse(image_asp_temp==1,7,10)
+# change the fig.asp for the treatable_map_fn figure since this is now wider than single map
 image_asp_facet_temp <- max(image_asp_temp*ifelse(image_asp_temp==1,0.65,0.55),0.35)
 # width_for_image <- round(((21.59-2*2)/2.54),1) # max width of 21.59cm page with 2cm margin (converted to in)
 # height_for_image_temp <- round((width_for_image * h_temp) / w_temp, 1)
-
 ##################################################
 ##################################################
 # call all the functions
@@ -68,22 +77,17 @@ image_asp_facet_temp <- max(image_asp_temp*ifelse(image_asp_temp==1,0.65,0.55),0
 # set aggregate factor for raster data
   agg_fact_temp <- 20
 # !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
-  # plt_basemap <<- landscape_basemap_fn(row_n = params$area_num, my_base_size = base_size_temp)
+  plt_basemap <<- landscape_basemap_fn(row_n = params$area_num, my_base_size = base_size_temp)
 # load raster data
 # !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
   rast_list_temp <<- raster_data_read_fn(row_n = params$area_num)
   # rast_list_temp <- raster_data_read_fn(row_n = params$area_num)
-
 #################
 # PLOTS
 #################
 title_plot_temp <- title_plot_fn(row_n = params$area_num)
-
-# fireshed project area plots
-plt_fshed_cnstrnt_lvl_temp <- plt_fshed_cnstrnt_lvl_fn(row_n = params$area_num)
-plt_patch_prop_temp <- plt_patch_prop_fn(row_n = params$area_num)
-plt_obj_trtbl_temp <- plt_obj_trtbl_fn(row_n = params$area_num)
-
+# spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = params$area_num)
+spatial_frmwrk_inset_temp <- spatial_frmwrk_inset_fn(row_n = params$area_num)
 # names and labels
 area_name_nost <- wf_landscapes %>% 
   sf::st_drop_geometry() %>% 
@@ -103,45 +107,68 @@ area_ha <- wf_landscapes %>%
   dplyr::filter(area_name == area_nm_list[params$area_num]) %>% 
   dplyr::pull(hectares) %>% 
   scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
+####### high-risk area calculations
+# usfs vs all lands
+hi_risk_brkdwn_temp <-
+  constrained_by_scnro_ls_pa %>% 
+    dplyr::filter(
+      pct_pa_intrsct>=0.25
+      # & area_name == area_nm_list[19]
+      & area_name == area_nm_list[params$area_num]
+      & fireshed_crisis_strategy %in% c("USFS-Only", "All-Lands")
+      & scenario_id == 1
+    ) %>% 
+    dplyr::group_by(fireshed_crisis_strategy) %>% 
+    dplyr::summarise(
+      n = n()
+      , dplyr::across(
+        c(feature_area_ha)
+        , ~ sum(.x,na.rm = T)
+      )
+    ) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(
+      area_ha = feature_area_ha
+      , area_ac = (area_ha*10000)/4046.85642
+      , area_tot_ac = sum(area_ac)
+      , area_tot_ha = sum(area_ha)
+      , n_tot = sum(n)
+      , n = scales::comma(n, accuracy = 1)
+    ) %>% 
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::starts_with("area_")
+        , ~ scales::comma(.x, suffix = "k", scale = 1e-3, accuracy = 1)
+      )
+    )
+hi_usfs_n <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="USFS-Only") %>% dplyr::pull(n)
+hi_usfs_ac <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="USFS-Only") %>% dplyr::pull(area_ac)
+hi_usfs_ha <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="USFS-Only") %>% dplyr::pull(area_ha)
+hi_all_n <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="All-Lands") %>% dplyr::pull(n)
+hi_all_ac <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="All-Lands") %>% dplyr::pull(area_ac)
+hi_all_ha <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="All-Lands") %>% dplyr::pull(area_ha)
+hi_tot_n <- hi_risk_brkdwn_temp %>% dplyr::filter(dplyr::row_number()==1) %>% dplyr::pull(n_tot)
+hi_tot_ac <- hi_risk_brkdwn_temp %>% dplyr::filter(dplyr::row_number()==1) %>% dplyr::pull(area_tot_ac)
+hi_tot_ha <- hi_risk_brkdwn_temp %>% dplyr::filter(dplyr::row_number()==1) %>% dplyr::pull(area_tot_ha)
 ```
 
-```{r fshed-cnstrnt-dist, fig.asp=0.36, fig.width=7}
-# ```{r fshed-cnstrnt-dist, fig.height=3, fig.width=11}
-plt_cnstrnt_class_table +
-plt_fshed_cnstrnt_lvl_temp +
-  theme(
-    legend.position = "bottom"
-    , legend.margin = margin(-0.3,0.0,0.0,0.0, "cm")
-    , plot.title = element_blank()
-    , plot.margin = margin(0.0,0.0,0.0,0.2, "cm")
-    , axis.title.x = element_text(size=6)
-  ) +
-  patchwork::plot_layout(nrow = 1, widths = c(1,1.45)) 
+```{r print-title, fig.height=1, fig.width=10, fig.asp=NULL, fig.align='left'}
+title_plot_temp
 ```
 
-Levels of mechanical constraint used to classify fireshed project areas were chosen based on USFS Wildfire Crisis Strategy objectives and science showing that fuels treatments are more effective as the percentage of the landscape treated progressively increases. We then calculated the proportion of fireshed project areas in each of these mechanical constraint classes both within the overall landscape area and within high-risk firesheds only.
-
-```{r largest-patch-map, fig.asp=image_asp_facet_temp}
-# ```{r largest-patch-map, fig.asp=image_asp_facet_temp}
-patchwork::plot_spacer() +
-  plt_patch_prop_temp +
-  patchwork::plot_layout(ncol = 1, heights = c(1,0.2)) &
+```{r print-spatial-frmwrk, fig.asp=image_asp_temp}
+# {r print-spatial-frmwrk, fig.height=height_for_image_temp, fig.width=width_for_image}
+# spatial_frmwrk_map_temp
+spatial_frmwrk_inset_temp +
   theme(
-    legend.position = "none"
-    , plot.title = element_blank()
-    , plot.margin = margin(0,0,0,0, "cm")
+    plot.caption = element_blank()
+    , plot.margin = margin(0,0,0,0,"cm")
   )
 ```
+The `r area_name_nost` priority landscape (black outline) located in `r area_st` (see map inset) covers `r area_acres` acres (`r area_ha` ha). We used the nested spatial framework for firesheds (gray dashed outline; [Ager et al. (2021)](https://scholar.google.com/scholar?cluster=7852635540589253195&hl=en&as_sdt=0,6)) ~250,000 acres (100,000 ha) in size which are the broad scale unit of prioritization and nested fireshed project areas (light blue outline) ~25,000 acres (10,000 ha) in size which are used for planning and conducting vegetation management projects. Fireshed project areas are shaded by risk to communities of the parent fireshed with the highest risk firesheds selected in the USFS Wildfire Crisis Strategy shaded red (multiple ownerships) and orange (USFS ownership only). 
 
-We selected the largest patch of interconnected fireshed project areas by constraint class and calculated the percent of the area of the overall landscape comprised by this patch (i.e., largest patch index).Comparison is made between the largest patch of project areas classified as high constraint (100–81% constrained; 0–19% available for mechanical treatment) and the largest patch of project areas classified as low constraint (0–59% constrained; 41–100% available). Extensive patches with little mechanical constraint represent opportunities for land managers to design plans that incorporate the principles of effective landscape-scale fuel treatments.
+The `r area_name_nost` landscape includes `r ifelse(is.na(hi_tot_n), 0, hi_tot_n)` high-risk fireshed project areas (shaded red and orange) that cover `r ifelse(is.na(hi_tot_ac), 0, hi_tot_ac)` acres (`r ifelse(is.na(hi_tot_ha), 0, hi_tot_ha)` ha). There are `r ifelse(is.na(hi_usfs_n), 0, hi_usfs_n)` high-risk project areas managed solely by USFS (shaded orange) that cover `r ifelse(is.na(hi_usfs_ac), 0, hi_usfs_ac)` acres (`r ifelse(is.na(hi_usfs_ha), 0, hi_usfs_ha)` ha). There are `r ifelse(is.na(hi_all_n), 0, hi_all_n)` high-risk project areas managed by multiple owners (shaded red) that cover `r ifelse(is.na(hi_all_ac), 0, hi_all_ac)` acres (`r ifelse(is.na(hi_all_ha), 0, hi_all_ha)` ha).
 
-```{r obj_trtbl, fig.asp=0.3, fig.width=7}
-plt_obj_trtbl_temp +
-  theme(
-    plot.title = element_blank()
-    , plot.margin = margin(0.0,0.0,0.0,0.0, "cm")
-    , axis.text.y = element_text(size=9)
-  )
-```
+\newpage
 
-sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad 
+asdfasdf asdfasdf sadf asdf asdf astg dr gbdfagawert dfvgasdf adsf saedt dsafg aer tg fdg

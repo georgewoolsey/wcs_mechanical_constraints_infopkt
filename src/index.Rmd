@@ -12,6 +12,13 @@ output:
   pdf_document: default
   # bookdown::pdf_document2
 linkcolor: blue
+header-includes: |
+    \usepackage{fancyhdr}
+    \pagestyle{fancy}
+    \fancyhead{}
+    \renewcommand{\headrulewidth}{0pt}
+    \fancyfoot[CO,CE]{`r params$area_name`}
+    \fancyfoot[LE,RO]{\thepage}
 # header-includes:
 #   - \usepackage{caption}
 #   - \captionsetup[figure]{labelformat=empty}
@@ -116,6 +123,48 @@ area_ha <- wf_landscapes %>%
   dplyr::filter(area_name == area_nm_list[params$area_num]) %>% 
   dplyr::pull(hectares) %>% 
   scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
+####### high-risk area calculations
+# usfs vs all lands
+hi_risk_brkdwn_temp <-
+  constrained_by_scnro_ls_pa %>% 
+    dplyr::filter(
+      pct_pa_intrsct>=0.25
+      & area_name == area_nm_list[params$area_num]
+      & fireshed_crisis_strategy %in% c("USFS-Only", "All-Lands")
+      & scenario_id == 1
+    ) %>% 
+    dplyr::group_by(fireshed_crisis_strategy) %>% 
+    dplyr::summarise(
+      n = n()
+      , dplyr::across(
+        c(feature_area_ha)
+        , ~ sum(.x,na.rm = T)
+      )
+    ) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::mutate(
+      area_ha = feature_area_ha
+      , area_ac = (area_ha*10000)/4046.85642
+      , area_tot_ac = sum(area_ac)
+      , area_tot_ha = sum(area_ha)
+      , n_tot = sum(n)
+      , n = scales::comma(n, accuracy = 1)
+    ) %>% 
+    dplyr::mutate(
+      dplyr::across(
+        tidyselect::starts_with("area_")
+        , ~ scales::comma(.x, suffix = "k", scale = 1e-3, accuracy = 1)
+      )
+    )
+hi_usfs_n <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="USFS-Only") %>% dplyr::pull(n)
+hi_usfs_ac <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="USFS-Only") %>% dplyr::pull(area_ac)
+hi_usfs_ha <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="USFS-Only") %>% dplyr::pull(area_ha)
+hi_all_n <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="All-Lands") %>% dplyr::pull(n)
+hi_all_ac <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="All-Lands") %>% dplyr::pull(area_ac)
+hi_all_ha <- hi_risk_brkdwn_temp %>% dplyr::filter(fireshed_crisis_strategy=="All-Lands") %>% dplyr::pull(area_ha)
+hi_tot_n <- hi_risk_brkdwn_temp %>% dplyr::filter(dplyr::row_number()==1) %>% dplyr::pull(n_tot)
+hi_tot_ac <- hi_risk_brkdwn_temp %>% dplyr::filter(dplyr::row_number()==1) %>% dplyr::pull(area_tot_ac)
+hi_tot_ha <- hi_risk_brkdwn_temp %>% dplyr::filter(dplyr::row_number()==1) %>% dplyr::pull(area_tot_ha)
 ```
 
 ```{r print-title, fig.height=1, fig.width=10, fig.asp=NULL, fig.align='left'}
@@ -127,12 +176,15 @@ title_plot_temp
 # spatial_frmwrk_map_temp
 spatial_frmwrk_inset_temp +
   theme(
-    # plot.title = element_blank()
-    plot.margin = margin(0,0,0,0,"cm")
+    plot.caption = element_blank()
+    , plot.margin = margin(0,0,0,0,"cm")
   )
-```
 
-The `r area_name_nost` priority landscape (black outline) located in `r area_st` (see map inset) covers `r area_acres` acres (`r area_ha` ha). This analysis utilized the nested spatial framework delineating firesheds (gray dashed outline) approximately 250,000 acres (100,000 ha) in size which are the broad scale unit of prioritization and nested fireshed project areas (light blue outline) approximately 25,000 acres (10,000 ha) in size which are used for planning and conducting vegetation management projects. Fireshed project areas are shaded by risk to communities of the parent fireshed with the highest risk firesheds as determined by the USFS Wildfire Crisis Strategy shaded red (multiple ownerships) and orange (USFS ownership only). The full process for delineating fireshed boundaries and determining risk across the continental US is described in detail in [Ager et al. (2021)](https://scholar.google.com/scholar?cluster=7852635540589253195&hl=en&as_sdt=0,6).
+# The full process for delineating fireshed boundaries and determining risk across the continental US is described in detail in [Ager et al. (2021)](https://scholar.google.com/scholar?cluster=7852635540589253195&hl=en&as_sdt=0,6).
+```
+The `r area_name_nost` priority landscape (black outline) located in `r area_st` (see map inset) covers `r area_acres` acres (`r area_ha` ha). We used the nested spatial framework for firesheds (gray dashed outline; [Ager et al. (2021)](https://scholar.google.com/scholar?cluster=7852635540589253195&hl=en&as_sdt=0,6)) ~250,000 acres (100,000 ha) in size which are the broad scale unit of prioritization and nested fireshed project areas (light blue outline) ~25,000 acres (10,000 ha) in size which are used for planning and conducting vegetation management projects. Fireshed project areas are shaded by risk to communities of the parent fireshed with the highest risk firesheds selected in the USFS Wildfire Crisis Strategy shaded red (multiple ownerships) and orange (USFS ownership only). 
+
+The `r area_name_nost` landscape includes `r ifelse(is.na(hi_tot_n), 0, hi_tot_n)` high-risk fireshed project areas (shaded red and orange) that cover `r ifelse(is.na(hi_tot_ac), 0, hi_tot_ac)` acres (`r ifelse(is.na(hi_tot_ha), 0, hi_tot_ha)` ha). There are `r ifelse(is.na(hi_usfs_n), 0, hi_usfs_n)` high-risk project areas managed solely by USFS (shaded orange) that cover `r ifelse(is.na(hi_usfs_ac), 0, hi_usfs_ac)` acres (`r ifelse(is.na(hi_usfs_ha), 0, hi_usfs_ha)` ha). There are `r ifelse(is.na(hi_all_n), 0, hi_all_n)` high-risk project areas managed by multiple owners (shaded red) that cover `r ifelse(is.na(hi_all_ac), 0, hi_all_ac)` acres (`r ifelse(is.na(hi_all_ha), 0, hi_all_ha)` ha).
 
 \newpage
 
@@ -169,10 +221,6 @@ reduction_table_temp +
   )
 ```
 
-The proportion of combined forest and shrubland area available for mechanical treatment was calculated by considering layered operational constraints on mechanical treatment based on three scenarios using current standards. At each level of constraint, the reduction in area and percentage was calculated based on the area remaining after considering the cumulative impact of prior constraints.
- 
-\newpage
-
 ```{r treatable-map, fig.asp=image_asp_facet_temp}
 # ```{r treatable-map, fig.height=6.5}
 treatable_map_temp +
@@ -183,7 +231,7 @@ treatable_map_temp +
   )
 ```
 
-asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx asdfasdfasdf xxxx
+The proportion of combined forest and shrubland area available for mechanical treatment was calculated by considering layered operational constraints on mechanical treatment based on three scenarios using current standards. At each level of constraint, the reduction in area and percentage was calculated based on the area remaining after considering the cumulative impact of prior constraints.
 
 \newpage
 
@@ -217,9 +265,7 @@ largest_patch_map_temp +
 
 We selected the largest patch of interconnected fireshed project areas by constraint class and calculated the percent of the area of the overall landscape comprised by this patch (i.e., largest patch index).Comparison is made between the largest patch of project areas classified as high constraint (100–81% constrained; 0–19% available for mechanical treatment) and the largest patch of project areas classified as low constraint (0–59% constrained; 41–100% available). Extensive patches with little mechanical constraint represent opportunities for land managers to design plans that incorporate the principles of effective landscape-scale fuel treatments.
 
-\newpage
-
-```{r obj_trtbl, fig.asp=0.3, fig.width=7}
+```{r obj-trtbl, fig.asp=0.25, fig.width=7}
 plt_obj_trtbl_temp +
   theme(
     plot.title = element_blank()

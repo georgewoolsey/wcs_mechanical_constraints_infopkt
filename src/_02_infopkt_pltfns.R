@@ -1390,11 +1390,11 @@ title_plot_fn <- function(row_n = 1) {
         , " ("
         , wf_landscapes %>% dplyr::filter(area_name==area_nm_list[row_n]) %>% dplyr::pull(investment)
         , " investment)"
-        , "\n"
-        , wf_landscapes %>% dplyr::filter(area_name==area_nm_list[row_n]) %>% dplyr::pull(acres) %>% scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
-        , " acres ("
-        , wf_landscapes %>% dplyr::filter(area_name==area_nm_list[row_n]) %>% dplyr::pull(hectares) %>% scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
-        , " ha)"
+        # , "\n"
+        # , wf_landscapes %>% dplyr::filter(area_name==area_nm_list[row_n]) %>% dplyr::pull(acres) %>% scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
+        # , " acres ("
+        # , wf_landscapes %>% dplyr::filter(area_name==area_nm_list[row_n]) %>% dplyr::pull(hectares) %>% scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
+        # , " ha)"
       )
       # , caption = "none"
     ) +
@@ -1875,7 +1875,8 @@ plt_ls_us_state_fn <- function(row_n = 1, use_simple = F) {
 spatial_frmwrk_inset_fn <- function(row_n=1) {
   ##!!!!!!!!!!! must define plt_basemap first
   # plt_basemap <<- landscape_basemap_fn(row_n = row_n)
-  spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = row_n)
+  spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = row_n) +
+    theme(plot.caption = element_blank())
   plt_ls_us_state_temp <- plt_ls_us_state_fn(row_n = row_n, use_simple = F) + 
     theme(
       plot.background = element_rect(fill = "white", color = "black")
@@ -1974,7 +1975,7 @@ plt_obj_trtbl_fn <- function(row_n = 1) {
               forcats::fct_match("Scenario 3") %>% 
               which()-0.45
        , label = expression(bold("objective")~bold("20-40%"))
-       , size = 3, color = "gray65", parse = T
+       , size = 2.4, color = "gray65", parse = T
       ) +
     geom_col(
       mapping = aes(fill = cnstrnt_class)
@@ -2028,7 +2029,7 @@ plt_obj_trtbl_fn <- function(row_n = 1) {
     ) +
     theme_light(base_size = 9) +
     theme(
-      legend.position = c(0.9,0.75)
+      legend.position = c(0.91,0.71)
       , legend.direction  = "vertical"
       , legend.title = element_text(size=7)
       , axis.title.x = element_text(face = "bold")
