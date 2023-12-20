@@ -7,7 +7,7 @@ date: ""
 params:
   area_num: 5
   area_name: "Temp Name"
-geometry: margin=2cm
+geometry: margin=1.5cm
 output:
   pdf_document
 linkcolor: blue
@@ -56,8 +56,10 @@ image_asp_temp <- min(h_temp/w_temp,1)
 # fix for layered constraints text sizing
 base_size_temp = ifelse(image_asp_temp==1,8,9)
 ggtext_size_temp = ifelse(image_asp_temp==1,7,10)
+image_asp_facet_temp <- max(image_asp_temp*ifelse(image_asp_temp==1,0.65,0.55),0.35)
 # width_for_image <- round(((21.59-2*2)/2.54),1) # max width of 21.59cm page with 2cm margin (converted to in)
 # height_for_image_temp <- round((width_for_image * h_temp) / w_temp, 1)
+
 ##################################################
 ##################################################
 # call all the functions
@@ -66,27 +68,21 @@ ggtext_size_temp = ifelse(image_asp_temp==1,7,10)
 # set aggregate factor for raster data
   agg_fact_temp <- 20
 # !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
-  plt_basemap <<- landscape_basemap_fn(row_n = params$area_num, my_base_size = base_size_temp)
+  # plt_basemap <<- landscape_basemap_fn(row_n = params$area_num, my_base_size = base_size_temp)
 # load raster data
 # !!!!!!!!!THIS IS SET GLOBALLY!!!!!!!!!
   rast_list_temp <<- raster_data_read_fn(row_n = params$area_num)
   # rast_list_temp <- raster_data_read_fn(row_n = params$area_num)
+
 #################
 # PLOTS
 #################
 title_plot_temp <- title_plot_fn(row_n = params$area_num)
-# spatial_frmwrk_map_temp <- spatial_frmwrk_map_fn(row_n = params$area_num)
-spatial_frmwrk_inset_temp <- spatial_frmwrk_inset_fn(row_n = params$area_num)
-# rast_area_fn(row_n = params$area_num, layer_name = "is_treatable")
-landcover_map_temp <- landcover_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
-protected_map_temp <- protected_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
-slopes_map_temp <- slopes_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
-roads_map_temp <- roads_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
-riparian_map_temp <- riparian_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
-administrative_map_temp <- administrative_map_fn(row_n = params$area_num, rast_agg_fact = agg_fact_temp)
-# tables
-reduction_table_temp <- reduction_table_fn(row_n = params$area_num)
-reduction_kable_temp <- reduction_kable_fn(row_n = params$area_num)
+
+# fireshed project area plots
+plt_fshed_cnstrnt_lvl_temp <- plt_fshed_cnstrnt_lvl_fn(row_n = params$area_num)
+plt_patch_prop_temp <- plt_patch_prop_fn(row_n = params$area_num)
+plt_obj_trtbl_temp <- plt_obj_trtbl_fn(row_n = params$area_num)
 
 # names and labels
 area_name_nost <- wf_landscapes %>% 
@@ -109,52 +105,43 @@ area_ha <- wf_landscapes %>%
   scales::comma(suffix = "k", scale = 1e-3, accuracy = 1)
 ```
 
-```{r print-title, fig.height=1, fig.width=10, fig.asp=NULL, fig.align='left'}
-title_plot_temp
-```
-
-```{r print-spatial-frmwrk, fig.asp=image_asp_temp}
-# {r print-spatial-frmwrk, fig.height=height_for_image_temp, fig.width=width_for_image}
-# spatial_frmwrk_map_temp
-spatial_frmwrk_inset_temp +
+```{r fshed-cnstrnt-dist, fig.asp=0.36, fig.width=7}
+# ```{r fshed-cnstrnt-dist, fig.height=3, fig.width=11}
+plt_cnstrnt_class_table +
+plt_fshed_cnstrnt_lvl_temp +
   theme(
-    # plot.title = element_blank()
-    plot.margin = margin(0,0,0,0,"cm")
-  )
-```
-
-The `r area_name_nost` priority landscape (black outline) located in `r area_st` (see map inset) covers `r area_acres` acres (`r area_ha` ha). This analysis utilized the nested spatial framework delineating firesheds (gray dashed outline) approximately 250,000 acres (100,000 ha) in size which are the broad scale unit of prioritization and nested fireshed project areas (light blue outline) approximately 25,000 acres (10,000 ha) in size which are used for planning and conducting fuel management projects. Fireshed project areas are shaded by risk to communities of the parent fireshed with the highest risk firesheds as determined by the USFS Wildfire Crisis Strategy shaded red (multiple ownerships) and orange (USFS ownership only). The full process for delineating fireshed boundaries and determining risk across the continental US is described in detail in [Ager et al. (2021)](https://scholar.google.com/scholar?cluster=7852635540589253195&hl=en&as_sdt=0,6).
-
-```{r print-layered-constraints}
-(landcover_map_temp + 
-  protected_map_temp + 
-  slopes_map_temp + 
-  roads_map_temp + 
-  riparian_map_temp + 
-  administrative_map_temp) +
-  patchwork::plot_layout(
-    ncol = 3
-    # , widths = c(1, 2)
+    legend.position = "bottom"
+    , legend.margin = margin(-0.3,0.0,0.0,0.0, "cm")
+    , plot.title = element_blank()
+    , plot.margin = margin(0.0,0.0,0.0,0.2, "cm")
+    , axis.title.x = element_text(size=6)
   ) +
-  patchwork::plot_annotation(tag_levels = 'A') & 
-  theme(
-    plot.title = element_blank()
-    , plot.margin = margin(0,0,0,0,"cm")
-    , plot.subtitle = ggtext::element_markdown(size = ggtext_size_temp)
-  )  
-# to get plots to overlap ;)
-# G3 <- G1 + plot_spacer() + G2 + plot_layout(widths = c(4, -1.1 ,4.5),guides = "collect")& theme(legend.position = "top")
+  patchwork::plot_layout(nrow = 1, widths = c(1,1.45)) 
 ```
 
-Layered operational constraints were considered in order to quantify the amount of land available for mechanical forest health and risk reduction fuel treatments. The analysis identifies (A) all forest and shrubland areas, (B) removes protected and inventoried roadless areas (IRA), (C) classifies land as mechanically operable based on terrain slope, (D) buffers existing roads according to equipment haul distance, (E) removes areas within riparian buffers, (F) removes areas within administrative boundaries to determine what land is mechanically available or constrained and by what factor.
+Levels of mechanical constraint used to classify fireshed project areas were chosen based on USFS Wildfire Crisis Strategy objectives and science showing that fuels treatments are more effective as the percentage of the landscape treated progressively increases. We then calculated the proportion of fireshed project areas in each of these mechanical constraint classes both within the overall landscape area and within high-risk firesheds only.
 
-```{r table-reductions, fig.height=2, fig.width=9.5, fig.asp=NULL}
-# ```{r table-reductions, fig.height=2}
-# reduction_kable_temp
-reduction_table_temp + 
+```{r largest-patch-map, fig.asp=image_asp_facet_temp}
+# ```{r largest-patch-map, fig.asp=image_asp_facet_temp}
+patchwork::plot_spacer() +
+  plt_patch_prop_temp +
+  patchwork::plot_layout(ncol = 1, heights = c(1,0.2)) &
   theme(
-    plot.title = element_blank()
-    , plot.margin = margin(0,0,0,0,"cm")
+    legend.position = "none"
+    , plot.title = element_blank()
+    , plot.margin = margin(0,0,0,0, "cm")
   )
 ```
 
+We selected the largest patch of interconnected fireshed project areas by constraint class and calculated the percent of the area of the overall landscape comprised by this patch (i.e., largest patch index).Comparison is made between the largest patch of project areas classified as high constraint (100–81% constrained; 0–19% available for mechanical treatment) and the largest patch of project areas classified as low constraint (0–59% constrained; 41–100% available). Extensive patches with little mechanical constraint represent opportunities for land managers to design plans that incorporate the principles of effective landscape-scale fuel treatments.
+
+```{r obj_trtbl, fig.asp=0.3, fig.width=7}
+plt_obj_trtbl_temp +
+  theme(
+    plot.title = element_blank()
+    , plot.margin = margin(0.0,0.0,0.0,0.0, "cm")
+    , axis.text.y = element_text(size=9)
+  )
+```
+
+sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad sdafasdgfafdg asdf asdgterhg sad 

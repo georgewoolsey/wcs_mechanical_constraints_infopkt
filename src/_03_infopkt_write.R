@@ -57,8 +57,8 @@ gc()
 render_report <- function(area_num) {
   # assuming the output format of input.Rmd is PDF
   rmarkdown::render(
-    "index.Rmd"
-    # "_index_xxx.Rmd"
+    # "index.Rmd"
+    "_index_xxx.Rmd"
     , params = list(
       area_num = area_num
       , area_name = paste0(
@@ -84,8 +84,6 @@ render_report <- function(area_num) {
     , envir = parent.frame()
   )
 }
-# 1:length(area_nm_list) %>% 
-# c(4,8,10,11,12) %>%
-c(4,11,12) %>%
+1:length(area_nm_list) %>%
+# c(4,11,12,15,21) %>%
   purrr::map(render_report)
-

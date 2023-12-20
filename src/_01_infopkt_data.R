@@ -473,3 +473,68 @@ gc()
     dplyr::filter(
       cnstrnt_class!="med. constraint"
     )
+############################################################
+############################################################
+# Objective vs. Treatable Plot
+############################################################
+############################################################
+constrained_by_scnro_ls_cnstrnt_obj <- 
+  constrained_by_scnro_ls_pa %>% 
+  dplyr::filter(
+    pct_pa_intrsct>=0.25
+  ) %>% 
+  dplyr::filter(fireshed_crisis_strategy %in% c("USFS-Only", "All-Lands")) %>% 
+  dplyr::group_by(scenario_id,scenario_lab,state,name,area_name,cnstrnt_class) %>% 
+  dplyr::summarise(
+    n = n()
+    , dplyr::across(
+      c(feature_area_ha,covertype_area_ha,rmn5_administrative_area_ha)
+      , ~ sum(.x,na.rm = T)
+    )
+  ) %>% 
+  dplyr::group_by(scenario_id,scenario_lab,state,name,area_name) %>% 
+  dplyr::mutate(
+    # cnstrnt_class = stringr::word(cnstrnt_class) %>% stringr::str_remove_all("\\.")
+    total_area_ha = sum(feature_area_ha)
+    , total_covertype_area_ha = sum(covertype_area_ha)
+    # "the need to treat 20 to 40 percent of the overall fireshed"
+    , pct_treatable =  rmn5_administrative_area_ha/total_area_ha
+    , objective_lo_treat_area_ha = total_area_ha*.2
+    , objective_hi_treat_area_ha = total_area_ha*.4
+  ) %>% 
+  dplyr::ungroup() 
+constrained_by_scnro_ls_cnstrnt_obj <- constrained_by_scnro_ls_cnstrnt_obj %>% 
+  dplyr::left_join(
+    # aggregate by area_name, scenario_lab
+    constrained_by_scnro_ls_cnstrnt_obj %>% 
+        dplyr::filter(
+          cnstrnt_class!="high constraint"
+        ) %>% 
+        dplyr::group_by(area_name, scenario_id) %>% 
+        dplyr::mutate(low=ifelse(cnstrnt_class=="low constraint",pct_treatable,0)) %>% 
+        dplyr::summarise(
+          pct_treatable_lowmed = sum(pct_treatable)
+          , pct_treatable_low = sum(low)
+        ) %>% 
+        dplyr::mutate(
+          treatment_objective = dplyr::case_when(
+              pct_treatable_low >= .2 ~ 1
+              , pct_treatable_lowmed >= .2 ~ 2
+              , TRUE ~ 3
+            ) %>% 
+            factor(
+              levels = 1:3
+              , labels = c(
+                  ">20% in\nlow constraint"
+                  ,">20% in\nlow+medium constraint"
+                  , "<20% in\nlow+medium constraint"
+              )
+              , ordered = T
+            )
+        ) %>% 
+        dplyr::ungroup()
+      , by = dplyr::join_by(area_name, scenario_id)
+  ) %>% 
+  dplyr::ungroup() %>% 
+  dplyr::arrange(state,name,scenario_id,cnstrnt_class)
+  
