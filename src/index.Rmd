@@ -60,13 +60,13 @@ bb_temp <- wf_landscapes %>%
 w_temp <- bb_temp[3] - bb_temp[1]
 h_temp <- bb_temp[4] - bb_temp[2]
 # fig.asp sets the height-to-width ratio
-image_asp_temp <- min(h_temp/w_temp,1)
+image_asp_temp <- min(h_temp/w_temp,0.951)
 # change the sizing of the basemap using theme_light(base_size = base_size_temp)
-base_size_temp = ifelse(image_asp_temp==1,8,9)
+base_size_temp = ifelse(image_asp_temp==0.951,8,9)
 # change the subtitle labels created with ggtext for layered constraints plot
-ggtext_size_temp = ifelse(image_asp_temp==1,7,10)
+ggtext_size_temp = ifelse(image_asp_temp==0.951,7,10)
 # change the fig.asp for the treatable_map_fn figure since this is now wider than single map
-image_asp_facet_temp <- max(image_asp_temp*ifelse(image_asp_temp==1,0.65,0.55),0.35)
+image_asp_facet_temp <- max(image_asp_temp*ifelse(image_asp_temp==0.951,0.65,0.55),0.35)
 # width_for_image <- round(((21.59-2*2)/2.54),1) # max width of 21.59cm page with 2cm margin (converted to in)
 # height_for_image_temp <- round((width_for_image * h_temp) / w_temp, 1)
 ##################################################

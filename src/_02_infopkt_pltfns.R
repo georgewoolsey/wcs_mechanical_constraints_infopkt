@@ -2105,5 +2105,3 @@ gc()
 # gc()
 # 
 # 
-
-  purrr::pluck(T)
